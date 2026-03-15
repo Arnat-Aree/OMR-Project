@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, render_template
 import cv2
 import numpy as np
 import base64
+import os
 
 app = Flask(__name__)
 
@@ -33,26 +34,67 @@ def process_omr():
     if 'image' not in request.files:
         return jsonify({"error": "No image uploaded"}), 400
 
-    # รับค่าพารามิเตอร์จากหน้าเว็บ
     file = request.files['image']
     answer_key_str = request.form.get('answer_key', '').upper()
     fill_thresh = float(request.form.get('fill_thresh', 0.35))
     
-    # เตรียมเฉลยให้ครบ 100 ข้อ
     answer_key = list(answer_key_str)
     while len(answer_key) < 100:
         answer_key.append("-")
 
-    # อ่านรูปภาพจาก memory
     in_memory_file = np.frombuffer(file.read(), np.uint8)
-    img_color = cv2.imdecode(in_memory_file, cv2.IMREAD_COLOR)
-    img = cv2.resize(img_color, (REF_W, REF_H))
+    img_orig = cv2.imdecode(in_memory_file, cv2.IMREAD_COLOR)
+
+    # =========================================================
+    # 🌟 NEW: จัดตำแหน่งภาพด้วย ORB Feature Matching (Homography)
+    # อ้างอิงจากแม่แบบ (Template) เพื่อแก้ปัญหาพรินเตอร์เว้นขอบกระดาษ
+    # =========================================================
+    template_path = "answer sheet.png" # <--- ชื่อไฟล์แม่แบบ
+    
+    if os.path.exists(template_path):
+        template = cv2.imread(template_path)
+        template = cv2.resize(template, (REF_W, REF_H))
+        
+        gray_photo = cv2.cvtColor(img_orig, cv2.COLOR_BGR2GRAY)
+        gray_template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+
+        # 1. ค้นหาจุดเด่นในภาพ (Features) ด้วยอัลกอริทึม ORB
+        orb = cv2.ORB_create(5000)
+        kp1, des1 = orb.detectAndCompute(gray_photo, None)
+        kp2, des2 = orb.detectAndCompute(gray_template, None)
+
+        # 2. จับคู่จุดเด่นระหว่างภาพถ่ายกับภาพแม่แบบ
+        matcher = cv2.DescriptorMatcher_create(cv2.DESCRIPTOR_MATCHER_BRUTEFORCE_HAMMING)
+        matches = matcher.match(des1, des2, None)
+        matches = sorted(matches, key=lambda x: x.distance, reverse=False)
+
+        # เลือกจุดที่ตรงกันมากที่สุด 15% แรก
+        good_matches = int(len(matches) * 0.15)
+        matches = matches[:good_matches]
+
+        points1 = np.zeros((len(matches), 2), dtype=np.float32)
+        points2 = np.zeros((len(matches), 2), dtype=np.float32)
+
+        for i, match in enumerate(matches):
+            points1[i, :] = kp1[match.queryIdx].pt
+            points2[i, :] = kp2[match.trainIdx].pt
+
+        # 3. คำนวณหาเมทริกซ์การบิดเบี้ยว (Homography Matrix) และดึงภาพให้ตรง
+        h, mask = cv2.findHomography(points1, points2, cv2.RANSAC)
+        img = cv2.warpPerspective(img_orig, h, (REF_W, REF_H))
+    else:
+        # ถ้าหาไฟล์แม่แบบไม่เจอ ให้ย่อรูปแบบธรรมดา
+        print("Warning: Template 'answer sheet.png' not found.")
+        img = cv2.resize(img_orig, (REF_W, REF_H))
+
     overlay = img.copy()
 
-    # --- Classical Image Processing Pipeline ---
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # =========================================================
+    # 🌟 OMR Pipeline ปกติ (ตอนนี้ภาพถูกทาบตรงกับแม่แบบเป๊ะแล้ว!)
+    # =========================================================
+    gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-    gray_eq = clahe.apply(gray)
+    gray_eq = clahe.apply(gray_img)
     blurred = cv2.medianBlur(gray_eq, 5)
     _, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
@@ -61,7 +103,6 @@ def process_omr():
     results = []
     correct_count, wrong_count, blank_count = 0, 0, 0
 
-    # --- Grading ---
     for col_idx in range(4):
         for row_idx in range(25):
             q_num = (col_idx * 25) + row_idx
@@ -73,9 +114,9 @@ def process_omr():
             detected_choices = []
             
             for choice_idx, x_pos in enumerate(x_pos_list):
-                ratio = get_fill_ratio(closed, x_pos, y_pos, BUBBLE_R)
-                fill_ratios.append(round(ratio, 3))
-                if ratio >= fill_thresh:
+                ratio_val = get_fill_ratio(closed, x_pos, y_pos, BUBBLE_R)
+                fill_ratios.append(round(ratio_val, 3))
+                if ratio_val >= fill_thresh:
                     detected_choices.append(CHOICES[choice_idx])
             
             ans_str = "".join(detected_choices)
@@ -97,7 +138,6 @@ def process_omr():
                 "status": status, "cls": cls, "ratios": fill_ratios
             })
             
-            # วาด Overlay
             for choice_idx, x_pos in enumerate(x_pos_list):
                 char = CHOICES[choice_idx]
                 is_filled = char in detected_choices
@@ -110,7 +150,6 @@ def process_omr():
                 elif is_key and not is_filled:
                     cv2.circle(overlay, (x_pos, y_pos), BUBBLE_R + 2, (0, 165, 255), 2)
 
-    # แปลงรูปภาพที่วาดเสร็จแล้วกลับเป็น Base64 เพื่อส่งให้หน้าเว็บแสดงผล
     _, buffer = cv2.imencode('.jpg', overlay)
     overlay_b64 = base64.b64encode(buffer).decode('utf-8')
 

@@ -4,217 +4,298 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OMR — ตรวจกระดาษคำตอบ 100 ข้อ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg:       #f5f4f1;
-  --surface:  #ffffff;
-  --border:   #e0ddd6;
-  --border2:  #c8c5bc;
-  --text:     #1a1a18;
-  --muted:    #6b6963;
-  --hint:     #a09d97;
-  --green:    #3B6D11; --green-bg: #EAF3DE;
-  --red:      #A32D2D; --red-bg:   #FCEBEB;
-  --amber:    #854F0B; --amber-bg: #FAEEDA;
-  --blue:     #185FA5; --blue-bg:  #E6F1FB;
-  --radius:   10px; --radius-sm: 6px;
+  --bg:         #f8fafc;
+  --surface:    #ffffff;
+  --border:     #e2e8f0;
+  --border-focus: #94a3b8;
+  --text-main:  #0f172a;
+  --text-muted: #64748b;
+  --text-hint:  #94a3b8;
+  --primary:    #0f172a;
+  --primary-hover: #334155;
+  --green:      #10b981; --green-bg: #d1fae5;
+  --red:        #ef4444; --red-bg:   #fee2e2;
+  --amber:      #f59e0b; --amber-bg: #fef3c7;
+  --blue:       #3b82f6; --blue-bg:  #dbeafe;
+  --radius-xl:  20px;
+  --radius-lg:  16px;
+  --radius-md:  10px;
+  --radius-sm:  6px;
+  --shadow-sm:  0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md:  0 4px 20px rgba(15, 23, 42, 0.04);
+  --shadow-hover: 0 10px 25px rgba(15, 23, 42, 0.08);
 }
-body { font-family: 'Segoe UI','Noto Sans Thai',system-ui,sans-serif; background:var(--bg); color:var(--text); font-size:14px; min-height:100vh; }
-.shell { max-width:1280px; margin:0 auto; padding:24px 20px; }
-.header { display:flex; align-items:center; gap:12px; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid var(--border); }
-.header h1 { font-size:18px; font-weight:600; }
-.badge { font-size:11px; padding:3px 10px; border-radius:20px; background:var(--blue-bg); color:var(--blue); border:1px solid #85B7EB; }
-.main { display:grid; grid-template-columns:290px 1fr; gap:16px; align-items:start; }
-@media(max-width:820px){ .main{grid-template-columns:1fr} }
 
-/* Cards */
-.card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:12px; }
-.card-title { font-size:11px; font-weight:600; letter-spacing:.06em; color:var(--muted); text-transform:uppercase; margin-bottom:12px; }
+body { 
+  font-family: 'Inter', 'Prompt', sans-serif; 
+  background: var(--bg); 
+  color: var(--text-main); 
+  font-size: 14px; 
+  line-height: 1.5;
+  min-height: 100vh; 
+  -webkit-font-smoothing: antialiased;
+}
 
-/* Upload */
-.upload-zone { border:2px dashed var(--border2); border-radius:var(--radius); padding:24px 16px; text-align:center; cursor:pointer; transition:all .15s; }
-.upload-zone:hover,.upload-zone.drag { border-color:var(--blue); background:var(--blue-bg); }
-.upload-icon { width:40px; height:40px; margin:0 auto 10px; background:var(--bg); border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid var(--border); }
-.upload-zone p { font-size:13px; color:var(--muted); }
-.upload-zone small { font-size:11px; color:var(--hint); }
-#file-input { display:none; }
-#preview-img { width:100%; border-radius:var(--radius-sm); border:1px solid var(--border); display:none; margin-top:10px; max-height:200px; object-fit:contain; background:var(--bg); }
+.shell { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+.header { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; }
+.header-icon {
+  background: var(--surface);
+  padding: 10px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  color: var(--primary);
+}
+.header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+.badge { 
+  font-size: 12px; font-weight: 500; padding: 4px 12px; 
+  border-radius: 20px; background: var(--blue-bg); color: var(--blue); 
+}
 
-/* Key */
-.key-field { width:100%; padding:8px 10px; border:1px solid var(--border2); border-radius:var(--radius-sm); font-family:'Cascadia Code','Consolas',monospace; font-size:13px; letter-spacing:.04em; background:var(--surface); color:var(--text); outline:none; transition:border-color .15s; }
-.key-field:focus { border-color:var(--blue); }
-.key-field::placeholder { font-family:'Segoe UI',sans-serif; letter-spacing:0; color:var(--hint); }
-.key-grid { display:grid; grid-template-columns:repeat(10,1fr); gap:3px; margin-top:8px; max-height:130px; overflow-y:auto; }
-.kp { padding:2px 4px; border-radius:3px; font-size:10px; font-family:monospace; text-align:center; background:var(--bg); border:1px solid var(--border); color:var(--muted); }
-.kp.set { background:var(--green-bg); color:var(--green); border-color:#97C459; }
+.main { display: grid; grid-template-columns: 320px 1fr; gap: 24px; align-items: start; }
+@media(max-width:860px){ .main{grid-template-columns:1fr} }
 
-/* Params */
-.param-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
-.param { border:1px solid var(--border); border-radius:var(--radius-sm); padding:7px 9px; background:var(--bg); }
-.param label { font-size:10px; color:var(--muted); display:block; margin-bottom:2px; }
-.param input { width:100%; border:none; background:transparent; color:var(--text); font-size:13px; outline:none; }
+.card { 
+  background: var(--surface); border-radius: var(--radius-xl); 
+  padding: 24px; margin-bottom: 20px; box-shadow: var(--shadow-md);
+  transition: box-shadow 0.3s ease;
+}
+.card:hover { box-shadow: var(--shadow-hover); }
+.card-title { 
+  font-size: 13px; font-weight: 600; color: var(--text-muted); 
+  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; 
+}
 
-/* Buttons */
-.btn { display:inline-flex; align-items:center; gap:6px; padding:8px 18px; border-radius:var(--radius-sm); border:1px solid var(--border2); background:var(--surface); color:var(--text); font-size:13px; cursor:pointer; transition:all .15s; }
-.btn:hover { background:var(--bg); border-color:var(--text); }
-.btn.primary { background:var(--text); color:var(--surface); border-color:var(--text); font-weight:500; }
-.btn.primary:hover { opacity:.85; }
-.btn.primary:disabled { opacity:.35; cursor:not-allowed; }
-.btn.sm { padding:5px 12px; font-size:12px; }
-.btn-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
+.upload-zone { 
+  border: 2px dashed var(--border); border-radius: var(--radius-lg); 
+  padding: 32px 20px; text-align: center; cursor: pointer; 
+  transition: all 0.2s ease; background: #f8fafc;
+}
+.upload-zone:hover, .upload-zone.drag { 
+  border-color: var(--blue); background: var(--blue-bg); transform: translateY(-2px);
+}
+.upload-icon { 
+  width: 48px; height: 48px; margin: 0 auto 12px; background: var(--surface); 
+  border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+  box-shadow: var(--shadow-sm); color: var(--text-muted);
+}
+.upload-zone p { font-size: 14px; font-weight: 500; color: var(--text-main); margin-bottom: 4px; }
+.upload-zone small { font-size: 12px; color: var(--text-hint); }
+#file-input { display: none; }
+#preview-img { 
+  width: 100%; border-radius: var(--radius-md); margin-top: 16px; 
+  max-height: 250px; object-fit: contain; background: var(--bg); 
+  box-shadow: inset 0 0 0 1px var(--border);
+}
 
-/* Steps */
-.steps { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:10px; }
-.step { padding:3px 10px; border-radius:20px; font-size:11px; border:1px solid var(--border); color:var(--hint); transition:all .2s; }
-.step.done { background:var(--green-bg); color:var(--green); border-color:#97C459; }
-.step.run  { background:var(--blue-bg);  color:var(--blue);  border-color:#85B7EB; }
-.step.err  { background:var(--red-bg);   color:var(--red);   border-color:#F09595; }
+.key-field { 
+  width: 100%; padding: 12px 16px; border: 1px solid var(--border); 
+  border-radius: var(--radius-md); font-family: 'Menlo', 'Cascadia Code', monospace; 
+  font-size: 14px; letter-spacing: 0.05em; color: var(--text-main); 
+  outline: none; transition: all 0.2s; background: var(--bg);
+}
+.key-field:focus { 
+  border-color: var(--border-focus); background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.1);
+}
+.key-field::placeholder { font-family: 'Inter', 'Prompt', sans-serif; letter-spacing: 0; color: var(--text-hint); }
 
-/* Log */
-.log { background:#1e1e1e; color:#ccc; border-radius:var(--radius-sm); padding:10px 12px; font-family:'Cascadia Code','Consolas',monospace; font-size:11.5px; line-height:1.75; height:110px; overflow-y:auto; margin-bottom:12px; }
-.log .ok  { color:#6db36d; }
-.log .er  { color:#f07070; }
-.log .inf { color:#6ab0e0; }
+.key-grid { 
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; 
+  margin-top: 12px; max-height: 140px; overflow-y: auto; padding-right: 4px;
+}
+.kp { 
+  padding: 6px 4px; border-radius: var(--radius-sm); font-size: 11px; 
+  font-family: monospace; text-align: center; background: var(--bg); 
+  color: var(--text-muted); border: 1px solid transparent;
+}
+.kp.set { background: var(--primary); color: white; font-weight: 500; }
 
-/* Debug strip */
-.debug-strip { display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; margin-bottom:12px; }
-.debug-item { flex-shrink:0; text-align:center; }
-.debug-item canvas { display:block; width:120px; height:auto; border:1px solid var(--border); border-radius:6px; }
-.debug-item span { display:block; font-size:10px; color:var(--muted); margin-top:4px; }
+.param-wrap { margin-bottom: 16px; }
+.param { 
+  border: 1px solid var(--border); border-radius: var(--radius-md); 
+  padding: 10px 14px; background: var(--bg); display: flex; 
+  justify-content: space-between; align-items: center;
+}
+.param label { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+.param input { 
+  width: 60px; text-align: right; border: none; background: transparent; 
+  color: var(--text-main); font-size: 14px; font-weight: 600; outline: none; 
+}
 
-/* Score */
-.score-row { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px; }
-.metric { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px; text-align:center; }
-.metric .v { font-size:22px; font-weight:600; line-height:1.2; }
-.metric .l { font-size:10px; color:var(--muted); margin-top:2px; }
-.metric.g .v { color:var(--green); }
-.metric.r .v { color:var(--red); }
-.metric.a .v { color:var(--amber); }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+.btn { 
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; 
+  padding: 10px 20px; border-radius: var(--radius-md); border: 1px solid var(--border); 
+  background: var(--surface); color: var(--text-main); font-size: 13px; font-weight: 500; 
+  cursor: pointer; transition: all 0.2s ease; 
+}
+.btn:hover { background: var(--bg); border-color: var(--border-focus); }
+.btn.primary { 
+  background: var(--primary); color: white; border: none; width: 100%; 
+  padding: 14px 20px; font-size: 14px; font-weight: 600;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+}
+.btn.primary:hover { 
+  background: var(--primary-hover); transform: translateY(-1px); 
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.2);
+}
+.btn.primary:disabled { 
+  background: var(--border); color: var(--text-muted); box-shadow: none; 
+  cursor: not-allowed; transform: none;
+}
+.btn.sm { padding: 8px 14px; font-size: 12px; flex: 1; }
 
-/* Tabs */
-.tab-row { display:flex; gap:4px; margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:8px; }
-.tab2 { padding:5px 14px; border-radius:var(--radius-sm); font-size:12px; border:1px solid transparent; color:var(--muted); cursor:pointer; background:transparent; transition:all .15s; }
-.tab2.on { background:var(--surface); color:var(--text); border-color:var(--border2); font-weight:500; }
+.log { 
+  background: #f1f5f9; color: var(--text-muted); border-radius: var(--radius-md); 
+  padding: 16px; font-family: 'Cascadia Code', 'Menlo', monospace; 
+  font-size: 12px; line-height: 1.8; height: 120px; overflow-y: auto; 
+}
+.log .ok  { color: var(--green); font-weight: 600; }
+.log .er  { color: var(--red); font-weight: 600; }
+.log .inf { color: var(--blue); }
 
-/* Result overlay canvas */
-#c-overlay { display:block; width:100%; max-height:500px; object-fit:contain; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg); }
+.score-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+.metric { background: var(--bg); border-radius: var(--radius-lg); padding: 16px; text-align: center; }
+.metric .v { font-size: 28px; font-weight: 600; line-height: 1.2; letter-spacing: -0.02em; }
+.metric .l { font-size: 12px; font-weight: 500; color: var(--text-muted); margin-top: 4px; }
+.metric.g .v { color: var(--green); }
+.metric.r .v { color: var(--red); }
+.metric.a .v { color: var(--amber); }
 
-/* Table */
-.res-wrap { border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; }
-.res-scroll { max-height:380px; overflow-y:auto; }
-table { width:100%; border-collapse:collapse; font-size:12px; }
-thead { position:sticky; top:0; z-index:1; }
-th { padding:6px 8px; text-align:center; font-size:11px; font-weight:600; color:var(--muted); background:var(--bg); border-bottom:1px solid var(--border); }
-td { padding:4px 8px; text-align:center; border-bottom:0.5px solid var(--border); }
-tr:last-child td { border:none; }
-tr:nth-child(even) td { background:#fafaf8; }
-.b { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; }
-.b.ok    { background:var(--green-bg); color:var(--green); }
-.b.err   { background:var(--red-bg);   color:var(--red); }
-.b.multi { background:var(--amber-bg); color:var(--amber); }
-.b.blank { background:var(--bg); color:var(--muted); border:1px solid var(--border); }
+.tab-row { display: flex; gap: 8px; margin-bottom: 16px; background: var(--bg); padding: 6px; border-radius: var(--radius-md); }
+.tab2 { 
+  flex: 1; padding: 10px; border-radius: var(--radius-sm); font-size: 13px; 
+  font-weight: 500; border: none; color: var(--text-muted); cursor: pointer; 
+  background: transparent; transition: all 0.2s; 
+}
+.tab2.on { background: var(--surface); color: var(--text-main); box-shadow: var(--shadow-sm); }
 
-/* Scrollbar */
-::-webkit-scrollbar { width:5px; height:5px; }
-::-webkit-scrollbar-track { background:transparent; }
-::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+#c-overlay { display: block; width: 100%; max-height: 600px; object-fit: contain; border-radius: var(--radius-md); background: var(--bg); }
+
+.res-wrap { border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+.res-scroll { max-height: 450px; overflow-y: auto; background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead { position: sticky; top: 0; z-index: 1; }
+th { padding: 12px 16px; text-align: center; font-size: 12px; font-weight: 600; color: var(--text-muted); background: var(--bg); border-bottom: 1px solid var(--border); }
+td { padding: 10px 16px; text-align: center; border-bottom: 1px solid var(--border); }
+tr:last-child td { border: none; }
+tr:hover td { background: var(--bg); }
+.b { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; }
+.b.ok    { background: var(--green-bg); color: var(--green); }
+.b.err   { background: var(--red-bg);   color: var(--red); }
+.b.multi { background: var(--amber-bg); color: var(--amber); }
+.b.blank { background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 </style>
 </head>
 <body>
 <div class="shell">
 
   <div class="header">
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-      <rect x="3" y="3" width="18" height="18" rx="2"/>
-      <line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/>
-      <line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>
-    </svg>
-    <h1>OMR — ตรวจกระดาษคำตอบ 100 ข้อ</h1>
-    <span class="badge">Classical Image Processing (Docker Backend)</span>
+    <div class="header-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <path d="M9 15L11 17L15 13"/>
+      </svg>
+    </div>
+    <div>
+      <h1>ระบบตรวจกระดาษคำตอบ OMR</h1>
+      <span class="badge" style="margin-top: 4px; display: inline-block;">Classical Image Processing</span>
+    </div>
   </div>
 
   <div class="main">
     <div>
       <div class="card">
-        <div class="card-title">กระดาษคำตอบ</div>
+        <div class="card-title">1. อัปโหลดกระดาษคำตอบ</div>
         <div class="upload-zone" id="drop-zone"
           onclick="document.getElementById('file-input').click()"
           ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
           <div class="upload-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
           </div>
-          <p>คลิกหรือลากรูปมาวาง</p>
-          <small>JPG / PNG — กระดาษ 100 ข้อ 4 คอลัมน์</small>
+          <p>คลิกหรือลากรูปมาวางตรงนี้</p>
+          <small>รองรับ JPG / PNG (แบบฟอร์ม 100 ข้อ)</small>
         </div>
         <input type="file" id="file-input" accept="image/*" onchange="loadFile(this)">
         <img id="preview-img" alt="preview">
       </div>
 
       <div class="card">
-        <div class="card-title">เฉลย Answer Key (100 ข้อ)</div>
+        <div class="card-title">2. กำหนดเฉลย (Answer Key)</div>
         <input class="key-field" id="key-input"
-          placeholder="ABCDE... (100 ตัว A–E)"
+          placeholder="พิมพ์เฉลย ABCDE... ติดกัน"
           oninput="onKeyInput()" maxlength="500">
         <div class="key-grid" id="key-grid"></div>
         <div class="btn-row">
           <button class="btn sm" onclick="randomKey()">สุ่มเฉลยทดสอบ</button>
-          <button class="btn sm" onclick="clearKey()">ล้าง</button>
+          <button class="btn sm" onclick="clearKey()">ล้างข้อมูล</button>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-title">ค่า Parameter</div>
-        <div class="param-grid">
+        <div class="card-title">3. ตั้งค่า & ประมวลผล</div>
+        <div class="param-wrap">
           <div class="param">
-            <label>Fill threshold (0–1)</label>
-            <input type="number" id="p-thresh" value="0.35" min="0.1" max="0.9" step="0.01"
-              title="เพิ่มถ้า false positive, ลดถ้าฝนจาง">
+            <label>ความเข้มรอยฝน (Threshold)</label>
+            <input type="number" id="p-thresh" value="0.35" min="0.1" max="0.9" step="0.01">
           </div>
         </div>
-        <div class="btn-row">
-          <button class="btn primary" id="run-btn" onclick="runPipeline()" disabled>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            ตรวจคำตอบผ่านเซิร์ฟเวอร์
-          </button>
-        </div>
+        <button class="btn primary" id="run-btn" onclick="runPipeline()" disabled>
+          เริ่มตรวจคำตอบผ่านเซิร์ฟเวอร์
+        </button>
       </div>
     </div>
 
     <div>
-      <div class="card">
-        <div class="card-title">System Log</div>
-        <div class="log" id="log-box">รอรูปภาพ...</div>
-      </div>
-
       <div class="card" id="result-card" style="display:none">
-        <div class="card-title">ผลการตรวจ</div>
+        <div class="card-title">สรุปผลการตรวจ</div>
         <div class="score-row">
-          <div class="metric g"><div class="v" id="r-correct">—</div><div class="l">ถูก</div></div>
-          <div class="metric r"><div class="v" id="r-wrong">—</div><div class="l">ผิด</div></div>
-          <div class="metric a"><div class="v" id="r-blank">—</div><div class="l">ไม่ตอบ / เกิน</div></div>
-          <div class="metric"><div class="v" id="r-pct">—</div><div class="l">คะแนน</div></div>
+          <div class="metric g"><div class="v" id="r-correct">—</div><div class="l">ตอบถูก</div></div>
+          <div class="metric r"><div class="v" id="r-wrong">—</div><div class="l">ตอบผิด</div></div>
+          <div class="metric a"><div class="v" id="r-blank">—</div><div class="l">ไม่ตอบ/ฝนเกิน</div></div>
+          <div class="metric"><div class="v" id="r-pct">—</div><div class="l">คะแนน (%)</div></div>
         </div>
+        
         <div class="tab-row">
-          <button class="tab2 on" onclick="switchTab('overlay')">รูป Overlay</button>
-          <button class="tab2" onclick="switchTab('table')">ตารางผล</button>
+          <button class="tab2 on" onclick="switchTab('overlay')">แสดงภาพตรวจผล (Overlay)</button>
+          <button class="tab2" onclick="switchTab('table')">ตารางคะแนนแบบละเอียด</button>
         </div>
+        
         <div id="tab-overlay">
           <canvas id="c-overlay"></canvas>
         </div>
+        
         <div id="tab-table" style="display:none">
           <div class="res-wrap"><div class="res-scroll">
             <table>
-              <thead><tr><th>ข้อ</th><th>ฝน</th><th>เฉลย</th><th>ผล</th><th style="text-align:left">Fill A B C D E</th></tr></thead>
+              <thead><tr><th>ข้อ</th><th>นักศึกษาฝน</th><th>เฉลย</th><th>สถานะ</th><th style="text-align:left">รายละเอียดความเข้ม (Fill %)</th></tr></thead>
               <tbody id="result-tbody"></tbody>
             </table>
           </div></div>
         </div>
       </div>
 
+      <div class="card">
+        <div class="card-title">System Console</div>
+        <div class="log" id="log-box">รอรูปภาพ...</div>
+      </div>
     </div>
   </div>
 </div>
@@ -225,7 +306,6 @@ const N_QUESTIONS = 100;
 let origImg = null;
 let answerKey = Array(N_QUESTIONS).fill('');
 
-// Drag & Drop
 function onDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag'); }
 function onDragLeave(e) { document.getElementById('drop-zone').classList.remove('drag'); }
 function onDrop(e) { e.preventDefault(); onDragLeave(e); const f = e.dataTransfer.files[0]; if (f) readFile(f); }
@@ -239,22 +319,21 @@ function readFile(f) {
       const p = document.getElementById('preview-img');
       p.src = ev.target.result; p.style.display = 'block';
       document.getElementById('run-btn').disabled = false;
-      logMsg('โหลดรูป ' + img.width + '×' + img.height + ' พร้อมส่งตรวจ', 'inf');
+      logMsg('โหลดรูปภาพสำเร็จ (' + img.width + '×' + img.height + ') พร้อมส่งประมวลผล', 'inf');
     };
     img.src = ev.target.result;
   };
   r.readAsDataURL(f);
 }
 
-// Log & Helpers
 function logMsg(msg, cls = '') {
   const b = document.getElementById('log-box');
-  b.innerHTML += `<span${cls ? ' class="' + cls + '"' : ''}>${msg}</span><br>\n`;
+  const time = new Date().toLocaleTimeString('th-TH');
+  b.innerHTML += `[${time}] <span${cls ? ' class="' + cls + '"' : ''}>${msg}</span><br>\n`;
   b.scrollTop = b.scrollHeight;
 }
 function gP(id)  { return parseFloat(document.getElementById(id).value) || 0; }
 
-// Key UI
 function onKeyInput() {
   const raw = document.getElementById('key-input').value.toUpperCase().split('').filter(c => CHOICES.includes(c));
   answerKey = Array(N_QUESTIONS).fill('');
@@ -264,7 +343,7 @@ function onKeyInput() {
 function renderKeyGrid() {
   const grid = document.getElementById('key-grid');
   grid.innerHTML = Array(N_QUESTIONS).fill(0).map((_, i) =>
-    `<div class="kp${answerKey[i] ? ' set' : ''}">${i+1}:${answerKey[i] || '?'}</div>`
+    `<div class="kp${answerKey[i] ? ' set' : ''}">${i+1}:${answerKey[i] || '-'}</div>`
   ).join('');
 }
 function randomKey() {
@@ -273,18 +352,14 @@ function randomKey() {
 }
 function clearKey() { document.getElementById('key-input').value = ''; onKeyInput(); }
 
-// Tab switch
 function switchTab(id) {
-  document.querySelectorAll('.tab2').forEach((t, i) =>
-    t.classList.toggle('on', ['overlay','table'][i] === id));
+  document.querySelectorAll('.tab2').forEach((t, i) => t.classList.toggle('on', ['overlay','table'][i] === id));
   document.getElementById('tab-overlay').style.display = id === 'overlay' ? 'block' : 'none';
   document.getElementById('tab-table').style.display   = id === 'table'   ? 'block' : 'none';
 }
 
-// PIPELINE: ส่งรูปไปให้ Backend (Flask + OpenCV) จัดการ
 async function runPipeline() {
-  if (!origImg) { alert('กรุณาอัปโหลดรูปก่อน'); return; }
-  
+  if (!origImg) { alert('กรุณาอัปโหลดรูปก่อนครับ'); return; }
   const fileInput = document.getElementById('file-input');
   if (!fileInput.files[0]) return;
 
@@ -293,44 +368,38 @@ async function runPipeline() {
   formData.append('answer_key', answerKey.join(''));
   formData.append('fill_thresh', document.getElementById('p-thresh').value);
 
-  document.getElementById('log-box').innerHTML = '<span class="inf">กำลังส่งรูปไปประมวลผลด้วย OpenCV ที่เซิร์ฟเวอร์...</span><br>';
+  logMsg('กำลังส่งรูปไปประมวลผลด้วย OpenCV ที่เซิร์ฟเวอร์...', 'inf');
   document.getElementById('run-btn').disabled = true;
+  document.getElementById('run-btn').innerHTML = 'กำลังประมวลผล...';
 
   try {
-    const response = await fetch('/process', {
-      method: 'POST',
-      body: formData
-    });
-
+    const response = await fetch('/process', { method: 'POST', body: formData });
     const data = await response.json();
     if (data.error) throw new Error(data.error);
 
-    // อัปเดตคะแนน
     document.getElementById('r-correct').textContent = data.score.correct;
     document.getElementById('r-wrong').textContent = data.score.wrong;
     document.getElementById('r-blank').textContent = data.score.blank;
-    document.getElementById('r-pct').textContent = data.score.correct + '%';
+    document.getElementById('r-pct').textContent = data.score.correct;
 
-    // อัปเดตตาราง
     const tbody = document.getElementById('result-tbody');
     tbody.innerHTML = '';
     data.results.forEach(r => {
       const rsStr = r.ratios.map((val, i) => 
-        `<span style="color:${val >= gP('p-thresh') ? 'var(--green)' : 'var(--hint)'}">
+        `<span style="color:${val >= gP('p-thresh') ? 'var(--green)' : 'var(--text-hint)'}; font-weight:${val >= gP('p-thresh') ? '600' : '400'}">
         ${CHOICES[i]}:${(val*100).toFixed(0)}%</span>`
-      ).join(' ');
+      ).join(' &nbsp; ');
 
       tbody.innerHTML += `
         <tr>
           <td>${r.q}</td>
-          <td style="font-family:monospace;font-weight:600">${r.ans || '—'}</td>
+          <td style="font-family:'Menlo', monospace; font-weight:600; color:var(--text-main);">${r.ans || '—'}</td>
           <td>${r.key || '—'}</td>
           <td><span class="b ${r.cls}">${r.status}</span></td>
-          <td style="font-size:11px;text-align:left;padding-left:12px">${rsStr}</td>
+          <td style="font-size:12px; text-align:left; padding-left:16px">${rsStr}</td>
         </tr>`;
     });
 
-    // แสดงรูป Overlay
     const overlayImg = document.getElementById('c-overlay');
     const ctx = overlayImg.getContext('2d');
     const img = new Image();
@@ -342,16 +411,16 @@ async function runPipeline() {
     img.src = data.overlay_image;
 
     document.getElementById('result-card').style.display = 'block';
-    document.getElementById('log-box').innerHTML += '<span class="ok">ประมวลผลเสร็จสิ้น!</span><br>';
+    logMsg('ประมวลผลเสร็จสิ้น!', 'ok');
 
   } catch (error) {
-    document.getElementById('log-box').innerHTML += `<span class="er">Error: ${error.message}</span><br>`;
+    logMsg(`Error: ${error.message}`, 'er');
   } finally {
     document.getElementById('run-btn').disabled = false;
+    document.getElementById('run-btn').innerHTML = 'เริ่มตรวจคำตอบผ่านเซิร์ฟเวอร์';
   }
 }
 
-// Init
 onKeyInput();
 </script>
 </body>
