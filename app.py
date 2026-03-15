@@ -90,19 +90,33 @@ def process_omr():
     overlay = img.copy()
 
     # =========================================================
-    # 🌟 OMR Pipeline ปกติ (ตอนนี้ภาพถูกทาบตรงกับแม่แบบเป๊ะแล้ว!)
+    # 🌟 OMR Pipeline: อัปเกรดสู้เงาดำด้วย Adaptive Thresholding
     # =========================================================
     gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    
+    # 1. ยังคงใช้ CLAHE ช่วยเกลี่ยแสงพื้นฐาน
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
     gray_eq = clahe.apply(gray_img)
-    blurred = cv2.medianBlur(gray_eq, 5)
-    _, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    
+    # 2. เบลอภาพลด Noise (เปลี่ยนเป็น Gaussian จะเนียนกว่าสำหรับ Adaptive)
+    blurred = cv2.GaussianBlur(gray_eq, (5, 5), 0)
+    
+    # 3. 🌟 ทีเด็ด: เปลี่ยนจาก Otsu เป็น Adaptive Threshold
+    # คอยดูเฉพาะจุดที่ "มืดกว่าบริเวณรอบๆ ตัวมันเอง" เท่านั้น (เงาแขนจะโดนตัดทิ้งเพราะมันมืดเป็นบริเวณกว้าง)
+    thresh = cv2.adaptiveThreshold(
+        blurred, 255, 
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+        cv2.THRESH_BINARY_INV, 
+        51, # ขนาดบล็อก (Block Size) ตั้งไว้ 51px ให้ใหญ่ครอบคลุมวงกลม 1 วง
+        12  # ค่าคงที่ (Constant) ยิ่งเยอะยิ่งกรองเงาเก่ง แต่ถ้าเยอะไปรอยฝนอ่อนๆ จะหาย
+    )
+    
+    # 4. ถมรอยโหว่ด้วย Morphology เหมือนเดิม
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
     closed = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
 
     results = []
     correct_count, wrong_count, blank_count = 0, 0, 0
-
     for col_idx in range(4):
         for row_idx in range(25):
             q_num = (col_idx * 25) + row_idx
